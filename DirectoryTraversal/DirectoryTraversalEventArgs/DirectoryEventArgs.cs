@@ -7,9 +7,12 @@ namespace DirectoryTraversal.DirectoryTraversalEventArgs
     {
         public DirectoryEventArgs(DirectoryInfo dirInfo)
         {
-            DirectoryInfoArgs = dirInfo;
+            DirectoryInfoArgs = dirInfo ?? throw new ArgumentNullException($"{nameof(dirInfo)} is required");
         }
 
         public DirectoryInfo DirectoryInfoArgs { get; }
+
+        public bool StopTraversal { get; set; }
+        public bool ExcludeFile { get; set; }
     }
 }

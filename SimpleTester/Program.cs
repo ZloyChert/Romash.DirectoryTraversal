@@ -16,9 +16,16 @@ namespace SimpleTester
             System.IO.DriveInfo di = new System.IO.DriveInfo(drives[1]);
 
             System.IO.DirectoryInfo rootDir = di.RootDirectory;
-            
-            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(s => true);
-            dt.RequiredFileFound += (sender, eventArgs) => Console.WriteLine(eventArgs.FileInfoArgs.FullName);
+            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(s => s.Contains("qq"));
+            dt.FileFound += (sender, eventArgs) =>
+            {
+                Console.WriteLine(eventArgs.FileInfoArgs.FullName);
+            };
+            dt.RequiredFileFound += (sender, eventArgs) =>
+            {
+                Console.WriteLine(eventArgs.FileInfoArgs.FullName);
+                eventArgs.StopTraversal = true;
+            };
             dt.RequiredDirectoryFound += (sender, eventArgs) => Console.WriteLine(eventArgs.DirectoryInfoArgs.FullName);
             dt.WalkDirectoryTree(rootDir).ToList();
             Console.Read();

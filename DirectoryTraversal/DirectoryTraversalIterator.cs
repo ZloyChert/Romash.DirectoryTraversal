@@ -10,57 +10,92 @@ namespace DirectoryTraversal
 {
     public class DirectoryTraversalIterator
     {
-        public Func<string, bool> Checker { get; set; }
+        public Func<string, bool> Filter { get; set; }
 
         public event EventHandler<FileEventArgs> RequiredFileFound;
         public event EventHandler<FileEventArgs> FileFound;
         public event EventHandler<DirectoryEventArgs> RequiredDirectoryFound;
         public event EventHandler<DirectoryEventArgs> DirectoryFound;
+        public event EventHandler<MessageEventArgs> TraversalStart;
+        public event EventHandler<MessageEventArgs> TraversalFinished;
 
 
-        public DirectoryTraversalIterator(Func<string, bool> checker)
+        public DirectoryTraversalIterator(Func<string, bool> filter)
         {
-            Checker = checker;
+            Filter = filter ?? throw new ArgumentNullException($"{nameof(filter)} is required");
         }
 
-        public IEnumerable<string> WalkDirectoryTree(DirectoryInfo root)
+        public IEnumerable<string> WalkDirectoryTree(DirectoryInfo rootDirectory)
         {
-            var files = root.GetFiles("*.*");
-            var subDirectories = root.GetDirectories();
+            OnRaiseTraversalStart(new MessageEventArgs($"Traversal start: {rootDirectory}"));
+            if (rootDirectory == null)
+            {
+                throw new ArgumentNullException($"{nameof(rootDirectory)} is required");
+            }
+            FileInfo[] files = rootDirectory.GetFiles("*.*");
+            DirectoryInfo[] subDirectories = rootDirectory.GetDirectories();
 
             foreach (FileInfo file in files)
             {
-                OnRaiseFileFoundEvent(new FileEventArgs(file));
-                if (Checker(file.FullName))
+                FileEventArgs fileArgs = new FileEventArgs(file);
+                OnRaiseFileFoundEvent(fileArgs);
+                if (fileArgs.StopTraversal)
                 {
-                    OnRaiseRequiredFileFoundEvent(new FileEventArgs(file));
-                    yield return file.FullName;
+                    yield break;
                 }
+                if (Filter(file.FullName))
+                {
+                    FileEventArgs nessesaryFileArgs = new FileEventArgs(file);
+                    OnRaiseRequiredFileFoundEvent(nessesaryFileArgs);
+                    if (nessesaryFileArgs.StopTraversal)
+                    {
+                        yield break;
+                    }
+                    if (!fileArgs.ExcludeFile && !nessesaryFileArgs.ExcludeFile)
+                    {
+                        yield return file.FullName;
+                    }
+                }
+
             }
 
             foreach (DirectoryInfo directory in subDirectories)
             {
-                OnRaiseDirectoryFoundEvent(new DirectoryEventArgs(directory));
-                if (Checker(directory.FullName))
+                DirectoryEventArgs directoryArgs = new DirectoryEventArgs(directory);
+                OnRaiseDirectoryFoundEvent(directoryArgs);
+                if (directoryArgs.StopTraversal)
                 {
-                    OnRaiseRequiredDirectoryFoundEvent(new DirectoryEventArgs(directory));
-                    yield return directory.FullName;
-                    foreach (var item in WalkDirectoryTree(directory))
+                    yield break;
+                }
+                if (Filter(directory.FullName))
+                {
+                    DirectoryEventArgs nessesaryDirectoryArgs = new DirectoryEventArgs(directory);
+                    OnRaiseRequiredDirectoryFoundEvent(nessesaryDirectoryArgs);
+                    if (nessesaryDirectoryArgs.StopTraversal)
                     {
-                        yield return item;
+                        yield break;
+                    }
+                    if (!directoryArgs.ExcludeFile && !nessesaryDirectoryArgs.ExcludeFile)
+                    {
+                        yield return directory.FullName;
+                        foreach (var item in WalkDirectoryTree(directory))
+                        {
+                            yield return item;
+                        }
                     }
                 }
             }
+            OnRaiseTraversalFinished(new MessageEventArgs($"Traversal finished"));
         }
 
         protected virtual void OnRaiseFileFoundEvent(FileEventArgs fileEventArgs)
         {
-            RequiredFileFound?.Invoke(this, fileEventArgs);
+            FileFound?.Invoke(this, fileEventArgs);
         }
 
         protected virtual void OnRaiseRequiredFileFoundEvent(FileEventArgs fileEventArgs)
         {
-            FileFound?.Invoke(this, fileEventArgs);
+            RequiredFileFound?.Invoke(this, fileEventArgs);
         }
 
         protected virtual void OnRaiseRequiredDirectoryFoundEvent(DirectoryEventArgs directoryEventArgs)
@@ -71,6 +106,16 @@ namespace DirectoryTraversal
         protected virtual void OnRaiseDirectoryFoundEvent(DirectoryEventArgs directoryEventArgs)
         {
             DirectoryFound?.Invoke(this, directoryEventArgs);
+        }
+
+        protected virtual void OnRaiseTraversalStart(MessageEventArgs messageEventArgs)
+        {
+            TraversalStart?.Invoke(this, messageEventArgs);
+        }
+
+        protected virtual void OnRaiseTraversalFinished(MessageEventArgs messageEventArgs)
+        {
+            TraversalFinished?.Invoke(this, messageEventArgs);
         }
     }
 }

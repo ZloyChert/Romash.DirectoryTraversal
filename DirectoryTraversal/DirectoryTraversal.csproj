@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DirectoryTraversalEventArgs\FileEventArgs.cs" />
+    <Compile Include="DirectoryTraversalEventArgs\MessageEventArgs.cs" />
     <Compile Include="DirectoryTraversalIterator.cs" />
     <Compile Include="DirectoryTraversalEventArgs\DirectoryEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
