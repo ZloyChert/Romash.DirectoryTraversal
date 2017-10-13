@@ -19,12 +19,20 @@ namespace DirectoryTraversal
         public event EventHandler<MessageEventArgs> TraversalStart;
         public event EventHandler<MessageEventArgs> TraversalFinished;
 
-
+        /// <summary>
+        /// Ctor with parameters
+        /// </summary>
+        /// <param name="filter">Delegate for filtering founded files</param>
         public DirectoryTraversalIterator(Func<string, bool> filter)
         {
             Filter = filter ?? throw new ArgumentNullException($"{nameof(filter)} is required");
         }
 
+        /// <summary>
+        /// Traversal of directory tree
+        /// </summary>
+        /// <param name="rootDirectory">Root to start traversal</param>
+        /// <returns>IEnumerable of directorys'(or files') names</returns>
         public IEnumerable<string> WalkDirectoryTree(DirectoryInfo rootDirectory)
         {
             OnRaiseTraversalStart(new MessageEventArgs($"Traversal start: {rootDirectory}"));
