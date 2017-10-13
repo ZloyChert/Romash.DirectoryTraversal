@@ -17,8 +17,10 @@ namespace SimpleTester
 
             System.IO.DirectoryInfo rootDir = di.RootDirectory;
             
-            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(Console.WriteLine, s => true);
-            dt.WalkDirectoryTree(rootDir);
+            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(s => true);
+            dt.RequiredFileFound += (sender, eventArgs) => Console.WriteLine(eventArgs.FileInfoArgs.FullName);
+            dt.RequiredDirectoryFound += (sender, eventArgs) => Console.WriteLine(eventArgs.DirectoryInfoArgs.FullName);
+            dt.WalkDirectoryTree(rootDir).ToList();
             Console.Read();
         }
     }

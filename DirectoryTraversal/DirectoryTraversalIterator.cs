@@ -4,47 +4,73 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DirectoryTraversal.DirectoryTraversalEventArgs;
 
 namespace DirectoryTraversal
 {
     public class DirectoryTraversalIterator
     {
-        public Action<string> ActionOnFile { get; set; }
         public Func<string, bool> Checker { get; set; }
 
-        public DirectoryTraversalIterator(Action<string> actionOnFile, Func<string, bool> checker)
+        public event EventHandler<FileEventArgs> RequiredFileFound;
+        public event EventHandler<FileEventArgs> FileFound;
+        public event EventHandler<DirectoryEventArgs> RequiredDirectoryFound;
+        public event EventHandler<DirectoryEventArgs> DirectoryFound;
+
+
+        public DirectoryTraversalIterator(Func<string, bool> checker)
         {
-            ActionOnFile = actionOnFile;
             Checker = checker;
         }
 
-        public void WalkDirectoryTree(DirectoryInfo root)
+        public IEnumerable<string> WalkDirectoryTree(DirectoryInfo root)
         {
-            try
+            var files = root.GetFiles("*.*");
+            var subDirectories = root.GetDirectories();
+
+            foreach (FileInfo file in files)
             {
-                var files = root.GetFiles("*.*");
-                var subDirs = root.GetDirectories();
-
-                foreach (FileInfo fi in files)
+                OnRaiseFileFoundEvent(new FileEventArgs(file));
+                if (Checker(file.FullName))
                 {
-                    if (Checker(fi.FullName))
-                    {
-                        ActionOnFile(fi.FullName);
-                    }
+                    OnRaiseRequiredFileFoundEvent(new FileEventArgs(file));
+                    yield return file.FullName;
                 }
+            }
 
-                foreach (DirectoryInfo dirInfo in subDirs)
+            foreach (DirectoryInfo directory in subDirectories)
+            {
+                OnRaiseDirectoryFoundEvent(new DirectoryEventArgs(directory));
+                if (Checker(directory.FullName))
                 {
-                    if (Checker(dirInfo.FullName))
+                    OnRaiseRequiredDirectoryFoundEvent(new DirectoryEventArgs(directory));
+                    yield return directory.FullName;
+                    foreach (var item in WalkDirectoryTree(directory))
                     {
-                        ActionOnFile(dirInfo.FullName);
-                        WalkDirectoryTree(dirInfo);
+                        yield return item;
                     }
                 }
             }
-            catch (UnauthorizedAccessException e)
-            {
-            }
+        }
+
+        protected virtual void OnRaiseFileFoundEvent(FileEventArgs fileEventArgs)
+        {
+            RequiredFileFound?.Invoke(this, fileEventArgs);
+        }
+
+        protected virtual void OnRaiseRequiredFileFoundEvent(FileEventArgs fileEventArgs)
+        {
+            FileFound?.Invoke(this, fileEventArgs);
+        }
+
+        protected virtual void OnRaiseRequiredDirectoryFoundEvent(DirectoryEventArgs directoryEventArgs)
+        {
+            RequiredDirectoryFound?.Invoke(this, directoryEventArgs);
+        }
+
+        protected virtual void OnRaiseDirectoryFoundEvent(DirectoryEventArgs directoryEventArgs)
+        {
+            DirectoryFound?.Invoke(this, directoryEventArgs);
         }
     }
 }
