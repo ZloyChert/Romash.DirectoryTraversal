@@ -40,8 +40,17 @@ namespace DirectoryTraversal
             {
                 throw new ArgumentNullException($"{nameof(rootDirectory)} is required");
             }
-            FileInfo[] files = rootDirectory.GetFiles("*.*");
-            DirectoryInfo[] subDirectories = rootDirectory.GetDirectories();
+            FileInfo[] files;
+            DirectoryInfo[] subDirectories;
+            try
+            {
+                files = rootDirectory.GetFiles("*.*");
+                subDirectories = rootDirectory.GetDirectories();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw new UnauthorizedAccessException($"You don't have permissions to enter directory {rootDirectory}");
+            }
 
             foreach (FileInfo file in files)
             {
@@ -83,7 +92,7 @@ namespace DirectoryTraversal
                     {
                         yield break;
                     }
-                    if (!directoryArgs.ExcludeFile && !nessesaryDirectoryArgs.ExcludeFile)
+                    if (!directoryArgs.ExcludeDirectory && !nessesaryDirectoryArgs.ExcludeDirectory)
                     {
                         yield return directory.FullName;
                         foreach (var item in WalkDirectoryTree(directory))

@@ -13,6 +13,6 @@ namespace DirectoryTraversal.DirectoryTraversalEventArgs
         public DirectoryInfo DirectoryInfoArgs { get; }
 
         public bool StopTraversal { get; set; }
-        public bool ExcludeFile { get; set; }
+        public bool ExcludeDirectory { get; set; }
     }
 }

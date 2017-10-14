@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,8 +16,9 @@ namespace SimpleTester
 
             System.IO.DriveInfo di = new System.IO.DriveInfo(drives[1]);
 
-            System.IO.DirectoryInfo rootDir = di.RootDirectory;
-            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(s => s.Contains("qq"));
+            DirectoryInfo rootDir = di.RootDirectory;
+            DirectoryInfo d = new DirectoryInfo("D:/Programs/tabs/13/megadeth");
+            DirectoryTraversalIterator dt = new DirectoryTraversalIterator(s => s.Contains(""));
             dt.FileFound += (sender, eventArgs) =>
             {
                 Console.WriteLine(eventArgs.FileInfoArgs.FullName);
@@ -24,7 +26,6 @@ namespace SimpleTester
             dt.RequiredFileFound += (sender, eventArgs) =>
             {
                 Console.WriteLine(eventArgs.FileInfoArgs.FullName);
-                eventArgs.StopTraversal = true;
             };
             dt.RequiredDirectoryFound += (sender, eventArgs) => Console.WriteLine(eventArgs.DirectoryInfoArgs.FullName);
             dt.WalkDirectoryTree(rootDir).ToList();
